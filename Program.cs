@@ -13,6 +13,7 @@ namespace ConsoleApp4
 
     internal class Program
     {
+        //Маски
         static Dictionary<string, string> mask = new Dictionary<string, string>() {
             {"0", "0.0.0.0" },
             {"1", "128.0.0.0"},
@@ -54,11 +55,11 @@ namespace ConsoleApp4
         static void Main(string[] args)
         {
             try
-            {
+            {   //Ввод команды
                 Console.WriteLine("Начните ввод");
                 string input = Console.ReadLine().ToLower();
 
-
+                //Если команда помощь
                 if (input == "help")
                 {
                     Help();
@@ -66,22 +67,27 @@ namespace ConsoleApp4
                 }
 
                 else
-                {
+                {   //Если команда отлична от помощи, считываем строку в массив
                     string[] input_with_parpms = input.ToLower().Split(' ');
+
+                    //Если параметров больше двух. 2 параметра обязательны
                     if (input_with_parpms.Length > 2)
                     {
 
-
+                        //Получаем значения параметров из строки
                         var param = GetParam(input_with_parpms);
+
+                        //Определяем есть ли маска в параметрах, если да задаём её для дальнейшего
                         if (param["address-mask"] != " ")
                         {
                             param["address-mask"] = Mask[param["address-mask"]];
                         }
                         else
-                        {
+                        {   //Инача маска 255.255.255.255
                             var para = param["address-mask"] = "32";
                             param["address-mask"] = Mask[para];
                         }
+                        //Основная функция, читает входящий файл, записывает в выходящий файл
                         IpCalc(param["file-log"], param["file-output"], param["address-start"], param["address-mask"], param["time-start"], param["time-end"]);
 
 
@@ -162,14 +168,16 @@ namespace ConsoleApp4
             return parms;
 
         }
+        //Функиция перевода строки даты в DataTime
         static DateTime StringToDateTime(string date, int flag)
         {
-            var calendar = date.Split(' ')[0].Split('-');
-            var times = date.Split(' ')[1].Split(':');
+            
             DateTime time = new DateTime();
 
             if (flag == 0)
             {
+                var calendar = date.Split(' ')[0].Split('.');
+                var times = date.Split(' ')[1].Split(':');
                 var day = Convert.ToInt32(calendar[0]);
                 var mounth = Convert.ToInt32(calendar[1]);
                 var year = Convert.ToInt32(calendar[2]);
@@ -183,6 +191,8 @@ namespace ConsoleApp4
             }
             else if (flag == 1)
             {
+                var calendar = date.Split(' ')[0].Split('-');
+                var times = date.Split(' ')[1].Split(':');
                 var day = Convert.ToInt32(calendar[2]);
                 var mounth = Convert.ToInt32(calendar[1]);
                 var year = Convert.ToInt32(calendar[0]);
@@ -196,8 +206,10 @@ namespace ConsoleApp4
             }
             return time;
         }
+        //Вычисление айпи: начальный, маска и прочее
         static void AddIp(string output, string line, string line_ip, string ip_start, string mask)
         {
+            //Открываем/создаём файл на запись
             StreamWriter streamWriter = new StreamWriter(output, true);
 
             var int_ip = BitConverter.ToUInt32(IPAddress.Parse(line_ip).GetAddressBytes(), 0);
@@ -209,6 +221,7 @@ namespace ConsoleApp4
             var ip_line_uint = BitConverter.ToUInt32(ip_start_uint, 0);
             var mask_uint = BitConverter.ToUInt32(IPAddress.Parse(mask).GetAddressBytes(), 0);
 
+            //Применяем маску к айпи, "высокий" предел
             var end_ip = ip_line_uint | mask_uint;
 
             if (int_ip > ip_range_start && int_ip < end_ip)
@@ -219,29 +232,34 @@ namespace ConsoleApp4
             }
             streamWriter.Close();
         }
+        //Основная функция
         static void IpCalc(string input, string output, string ip_start = "0.0.0.0", string mask = "255.255.255.255", string time_start = " ", string time_end = " ")
         {
+            //Читаем файл с айпи
             StreamReader sr = new StreamReader(input);
-
-            DateTime time_s = StringToDateTime("01-03-1900 06:17:54", 0);
-
-
+            DateTime time_s;
             if (time_start != " ")
             {
                 time_s = StringToDateTime(time_start, 0);
-
+            }
+            else
+            {
+                time_s = StringToDateTime("01.01.1900", 0);
             }
 
+
+            
+            //Читаем строку
             string line = sr.ReadLine();
             int i = 1;
-
+            //Пока есть строки
             while (line != null)
             {
                 var line_ip = line.Split(' ')[0];
-
+                //Проверка на наличие параметров времени
                 if (time_start != " ")
                 {
-
+                    //Время
                     var test = line.Split(' ')[1] + " " + line.Split(' ')[2];
                     var line_date = StringToDateTime(test, 1);
 
